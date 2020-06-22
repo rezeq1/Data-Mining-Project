@@ -47,3 +47,7 @@ def Equal_width(data, k):
             temp = temp + [data[i]]
     arr.append(temp)
     return arr
+
+def EntropyBased(data ,k):
+    return 0
+

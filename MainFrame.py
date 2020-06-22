@@ -75,10 +75,13 @@ def InputsForm_To_ResultForm():
                     result_label.configure(text="Number of bins field is empty")
                 else:
                     try:
-                        int(NumOFBins.get())
-                        result_label.configure(text="")
-                        Inputs_Frame.destroy()
-                        ResultForm()
+                        num_bins=int(NumOFBins.get())
+                        if num_bins <= 0:
+                            result_label.configure(text="Number of bins field accept positive numbers")
+                        else:
+                            result_label.configure(text="")
+                            Inputs_Frame.destroy()
+                            ResultForm()
                     except ValueError:
                         result_label.configure(text="Number of bins field accept just numbers")
             else:
