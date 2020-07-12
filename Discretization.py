@@ -1,4 +1,7 @@
 import pandas as pd
+from math import log2
+import Entropy
+from EnropyTree import EntropyTree as Tree
 
 
 class Discritization:
@@ -17,8 +20,8 @@ class Discritization:
         def __repr__(self):
             return f'[{self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
 
-        def in_(self,x):
-            return self.min<=x<=self.max
+        def in_(self, x):
+            return self.min <= x <= self.max
 
     def __init__(self, data, numOfbis):
         self.data = data
@@ -49,11 +52,10 @@ class Discritization:
         for x in self.data:
             for i in range(len(helpm)):
                 if x in helpm[i]:
-                    #newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
+                    # newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
                     newDis.append(self.interval(min(helpm[i]), max(helpm[i])))
 
                     break
-
 
         return newDis
 
@@ -85,7 +87,7 @@ class Discritization:
         for x in self.data:
             for i in range(len(arr)):
                 if x in arr[i]:
-                    #newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
+                    # newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
                     newDis.append(self.interval(min(arr[i]), max(arr[i])))
 
                     break
@@ -96,6 +98,9 @@ class Discritization:
 
     def pandas_qcut(self):
         return pd.qcut(self.data, self.numberOfbins)
+
+    def Enropy_Discretization(self):
+        return 0
 
 
 def Equal_frequency(data, k):
@@ -123,12 +128,118 @@ def Equal_frequency(data, k):
     return arr
 
 
-def EntropyBased(data, k):
-    return 0
+def EntropyBased(data, attr, Class, k):
+    data = data.sort_values(by=attr)
+    EntTree = Tree(data)
+    split = [bestSplitPoint(data, attr, Class)]
+    bins = [data.loc[data[attr] <= split[0][0]], data.loc[data[attr] > split[0][0]]]
+    finalSplit = []
+    depth = log2(k)
+
+    if (int(depth) - depth) != 0:
+        depth = int(depth) + 1
+
+    for i in range(int(depth)):
+        helpBin = []
+        tree = EntTree
+        bins = EntTree.getLeafs()
+        for b in bins:
+            data = b.getRoot()
+            split = bestSplitPoint(data, attr, Class)
+            b.setSplit(split[0])
+            b.setEntropy(split[1])
+            b.setLeft(Tree(data.loc[data[attr] <= split[0]]))
+            b.setRight(Tree(data.loc[data[attr] > split[0]]))
+    leafs=EntTree.getLeafs()
+    for i in leafs:
+        i.setEntropy(Entropy.entropy(i.getRoot()[Class].to_list()))
+
+    return EntTree
+
+def Enropy_Discretization(data, attr, Class, k):
+    tree=EntropyBased(data,attr,Class,k)
+    rootEnt=tree.entropy
+    bins=tree.getLevel_h()
+    finalBins=[]
+
+    bin=0
+    while bin<k:
+        gain=0
+        node=None
+        helpBins = list(finalBins)
+        for i in bins:
+            right=i.getRight()
+            left=i.getLeft()
+            helpBins.append(left)
+            helpBins.append(right)
+            for x in bins:
+                if not (x is i):
+                    helpBins.append(x)
+            infoD=0
+            for x in helpBins:
+                infoD+=(len(x.data[attr].to_list())/len(data[attr].to_list()))*x.entropy
+            gainD=rootEnt-infoD
+            if gainD>=gain:
+                gain=gainD
+                node=i
+        finalBins.append(node.left)
+        finalBins.append(node.right)
+        bins.remove(node)
+        if len(bins+finalBins)==k:
+            bin=k
+            finalBins= bins+finalBins
+        bin+=1
+    return tuple([(min(x.data[attr].to_list()),max(x.data[attr].to_list())) for x in finalBins])
 
 
-x = Discritization([1, 9, 3, 4, 5, 67, 7, 8, 9],3)
-print(x.Equal_width())
-print(x.EqualFrequencyDiscretization())
-#print(x.pandas_cut())
-#print(x.pandas_qcut())
+
+
+
+
+def getMaxGain(list):
+    maxG = list[0]
+    for i in list:
+        if i[1] >= maxG[1]:
+            maxG = i
+    list.remove(maxG)
+    return maxG
+
+
+def bestSplitPoint(data, attr, Class, gainD=None):
+    '''
+    :param data:sorted data frame by the attr
+    :param attr:the data frame column that you need to split
+    :param Class:class column
+    :return:best split point and the gain
+    '''
+    list1 = data[attr].to_list()
+    if len(list1) == 1:
+        return (list1[0], 0)
+    entropyD = Entropy.entropy(data[Class].to_list())
+    bestS = (list1[0] + list1[1]) / 2
+    firstS = data.loc[data[attr] <= bestS]
+    lastS = data.loc[data[attr] > bestS]
+    if gainD is None:
+        infoD = (len(firstS[attr]) / len(list1)) * Entropy.entropy(firstS[Class].to_list()) + (
+                len(lastS[attr]) / len(list1)) * Entropy.entropy(lastS[Class].to_list())
+        gainD = entropyD - infoD
+
+    for i in range(1, len(list1) - 1):
+        best = (list1[i] + list1[i + 1]) / 2
+        firstS = data.loc[data[attr] <= best]
+        lastS = data.loc[data[attr] > best]
+        infoD = (len(firstS[attr]) / len(list1)) * Entropy.entropy(firstS[Class].to_list()) + (
+                len(lastS[attr]) / len(list1)) * Entropy.entropy(lastS[Class].to_list())
+        gain = entropyD - infoD
+        if gain >= gainD:
+            bestS = best
+            gainD = gain
+
+    return (bestS, entropyD)
+
+
+data = {"attr": [4, 8, 5, 12, 15, 1, 2, 3, 4, 5], 'class': ['N', 'N', 'Y', 'Y', 'Y'] * 2}
+df = pd.DataFrame(data=data)
+
+x = Enropy_Discretization(df, 'attr', 'class', 4)
+print(x)
