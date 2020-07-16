@@ -15,10 +15,10 @@ class Discritization:
             return self
 
         def __str__(self):
-            return f'[{self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
+            return f'({self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
 
         def __repr__(self):
-            return f'[{self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
+            return f'interval({self.min},{self.min},{self.binNumber})'
 
         def in_(self, x):
             return self.min <= x <= self.max
@@ -41,6 +41,8 @@ class Discritization:
 
         newDis = []
         helpm = []
+        array=[float('-inf')]+array
+        array.append(float('inf'))
         for i in range(k):
             temp = []
             for j in range(lenB * i, lenB * i + lenB):
@@ -59,39 +61,39 @@ class Discritization:
 
         return newDis
 
-    def Equal_width(self, attr):
-        arr = []
-        temp = []
-        k = self.numberOfbins
-        w = int((max(self.data[attr].to_list()) - min(self.data[attr].to_list())) / k)
-        if (max(self.data[attr].to_list()) - min(self.data[attr].to_list())) / k - w != 0:
-            w += 1
+    def EqualWidthDiscretization( self,attr):
+        array=self.data[attr].to_list()
+        k=self.numberOfbins
+        maxa, mina = max(array), min(array)
+        temp = None
+        if type(k) == int:
+            width = round((maxa - mina) / k, 3)
 
-        for i in range(0, len(self.data[attr].to_list())):
-            if self.data[attr].to_list()[i] < min(self.data[attr].to_list()) + w:
-                temp = temp + [self.data[attr].to_list()[i]]
-        arr.append(temp)
+        else:
+            width = (maxa - mina) / len(k)
+            temp = k
+            k = len(k)
 
-        for i in range(1, k - 1):
-            temp = []
-            for j in range(0, len(self.data[attr].to_list())):
-                if (min(self.data[attr].to_list()) + w * i) <= self.data[attr].to_list()[j] < (
-                        min(self.data[attr].to_list()) + w * (i + 1)):
-                    temp = temp + [self.data[attr].to_list()[j]]
-            arr.append(temp)
-        temp = []
-        for i in range(0, len(self.data[attr].to_list())):
-            if (min(self.data[attr].to_list()) + w * (k - 1)) <= self.data[attr].to_list()[i]:
-                temp = temp + [self.data[attr].to_list()[i]]
-        arr.append(temp)
+        print(width)
+        newW = 0
         newDis = []
-        for x in self.data[attr].to_list():
-            for i in range(len(arr)):
-                if x in arr[i]:
-                    # newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
-                    newDis.append(self.interval(min(arr[i]), max(arr[i])))
+        for i in range(k):
+            if newW == 0:
+                for x in array:
+                    if x < width:
+                        newDis.append(self.interval(float('-inf'),width + mina,None if not temp else temp[i]))
+                newW += width + mina
+            elif i < k - 1:
+                for x in array:
+                    if newW <= x < newW + width:
+                        newDis.append(self.interval(newW,newW + width,None if not temp else temp[i]))
+                newW += width
+            else:
+                for x in array:
+                    if newW <= x:
+                        newDis.append(self.interval(newW,float('inf'),None if not temp else temp[i]))
+                newW += width
 
-                    break
         return newDis
 
     def pandas_cut(self, attr):
@@ -106,6 +108,7 @@ class Discritization:
         tree = EntropyBased(data, attr, Class, k)
         rootEnt = tree.entropy
         bins = tree.getLevel_h()
+        allSplits=tree.getNodes()
         finalBins = []
 
         bin = 0
@@ -136,12 +139,24 @@ class Discritization:
                 finalBins = bins + finalBins
             bin += 1
 
-        dis = [(min(x.data[attr].to_list()), max(x.data[attr].to_list())) for x in finalBins]
+        for i in bins:
+            allSplits.remove(i)
+
+        splits=[x.split for x in allSplits]
+        splits.sort()
+        dis=[(float('-inf'),splits[0])]
+        for i in range(len(splits)):
+            if i == len(splits)-1:
+                dis.append((splits[i], float('inf')))
+                print(splits[i])
+            else:
+                dis.append((splits[i],splits[i+1]))
+
         dataD = data[attr].to_list()
         lastBins = []
         for i in range(len(dataD)):
             for x in dis:
-                if x[0] <= dataD[i] <= x[1]:
+                if x[0] < dataD[i] <= x[1]:
                     dataD[i] = self.interval(x[0], x[1], self.numberOfbins[dis.index(x)] if type(
                         self.numberOfbins) is list else None)
                     break
@@ -155,6 +170,7 @@ class Discritization:
         tree = built_EntropyBased(data, attr, Class, k)
         rootEnt = tree.entropy
         bins = tree.getLevel_h()
+        allSplits = tree.getNodes()
         finalBins = []
 
         bin = 0
@@ -185,7 +201,19 @@ class Discritization:
                 finalBins = bins + finalBins
             bin += 1
 
-        dis = [(min(x.data[attr].to_list()), max(x.data[attr].to_list())) for x in finalBins]
+        for i in bins:
+            allSplits.remove(i)
+
+        splits = [x.split for x in allSplits]
+        splits.sort()
+        dis = [(float('-inf'), splits[0])]
+        for i in range(len(splits)):
+            if i == len(splits) - 1:
+                dis.append((splits[i], float('inf')))
+                print(splits[i])
+            else:
+                dis.append((splits[i], splits[i + 1]))
+
         dataD = data[attr].to_list()
         lastBins = []
         for i in range(len(dataD)):
@@ -344,5 +372,6 @@ df = pd.DataFrame(data=data)
 
 x = Discritization(df, 4)
 #x=x.built_Enropy_Discretization('attr','class')
-print(x.built_Enropy_Discretization('attr','class'))
+x=x.built_Enropy_Discretization('attr','class')
+[print(i) for i in x]
 
