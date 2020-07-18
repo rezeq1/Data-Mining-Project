@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from Entropy import InfoGain
+import random
 
 def read_structure(FileName):
     struct = pd.read_csv(FileName, sep=' ', names=['type', 'feature', 'data'])
@@ -18,7 +19,6 @@ def Get_Decision_Tree(data, columns):
 
     if len(np.unique(data['class'])) == 1:
         return np.unique(data['class'])[0]
-
 
     # finding the biggest feature's info gain
     temp = {}
@@ -40,69 +40,46 @@ def Get_Decision_Tree(data, columns):
     return {max_info: temp}
 
 
-def Classification_Row(tree, row, columns):
+def Classification_Row(tree, row, columns,deafult):
 
     root = list(tree.keys())[0]
     result = row[columns.index(root)]
-    classification = None
+    classification = random.choice(deafult)
     if type(result) != str:
         for intervl in tree[root]:
             if result in intervl:
                 classification = tree[root][intervl]
                 break
-
-
     else:
         if result in tree[root]:
             classification = tree[root][result]
 
-
-
     if type(classification) != dict:
         return classification
     else:
-        return Classification_Row(classification,row,columns)
+        return Classification_Row(classification,row,columns,deafult)
 
 
-def ID3(Test_File,Train_File,Structure_File,NumOfBins):
-    # Load files
-    test = pd.read_csv(Test_File)
-    train = pd.read_csv(Train_File)
-    struct = read_structure(Structure_File)
+def ID3(Path,train):
 
+    # get the columns of test file
+    columns = train.columns.tolist()
+
+    # build the model
+    columns.remove('class')
+    return Get_Decision_Tree(train, columns)
+
+def Testing_model(Path,model,test):
     # get the rows and the columns of test file
     columns = test.columns.tolist()
+    class_attrs = list(set(test['class'].tolist()))
     rows = []
     for i in range(0, test.shape[0]):
         rows.append(test.iloc[i].tolist())
 
-    # fill nan values
-    nan_columns = train.columns[train.isna().any()].tolist()
-    for col in nan_columns:
-        train[col] = train[col].fillna(method='ffill')
-
-    nan_columns = test.columns[test.isna().any()].tolist()
-    for col in nan_columns:
-        test[col] = test[col].fillna(method='ffill')
-
-    # Discretization
-    for col in columns:
-        if struct[col] == 'NUMERIC':
-            train[col] = pd.qcut(train[col], NumOfBins, duplicates='drop')
-    print('build the model')
-    # build the model
-    columns.remove('class')
-    tree = Get_Decision_Tree(train, columns)
-    print('testting the model')
     # testting the model
-    columns.append('class')
-    wrongs = 0
+    results=[]
     for row in rows:
-        result = Classification_Row(tree, row, columns)
-        if result != row[-1]:
-            wrongs += 1
+        results.append(Classification_Row(model, row, columns,class_attrs))
 
-    # showing info
-    print("Number of wrongs:{0}  From Total:{1}".format(wrongs, len(rows)))
-    print("Accuracy:{:.2f}%".format(float((len(rows) - wrongs) / len(rows) * 100)))
-
+    return results

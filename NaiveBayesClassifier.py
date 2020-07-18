@@ -1,9 +1,8 @@
 from functools import reduce
 from collections import Counter
 import numpy
-import numpy as np
 import pandas as pd
-import pandas
+
 
 def ReadCsv(FileName):
     df = pd.read_csv(FileName)
@@ -34,6 +33,7 @@ def Build_probability_For_One_Column(Atrr, Class, attrs_Atrr, attrs_Class):
     couples = list(zip(Atrr, Class))
     Original_couples = make_prod(attrs_Atrr, attrs_Class)
     count = 0
+
     # Laplacian
     if len(Original_couples) != len(set(couples)):
         for coup in Original_couples:
@@ -49,7 +49,7 @@ def Build_probability_For_One_Column(Atrr, Class, attrs_Atrr, attrs_Class):
         else:
             count_class[indx[1]] = 1
 
-            # Calculate probability
+    # Calculate probability
     counter_values = {}
     for x in Counter(couples):
         counter_values[x] = Counter(couples)[x] / (count_class[x[1]])
@@ -66,34 +66,42 @@ def probability(table, attr):
 
 
 def conditional_probability(table, attr1, attr2):
-    if type(attr1) != numpy.int64:
+    if type(attr1)  not in [numpy.int64,numpy.float64]:
+        attr1=attr1.lower()
         return table[(attr1, attr2)]
 
     for i in table:
-        if type(i[0]) != pandas.Interval:
-            if np.isnan(attr1):
-                return table[(i[0], attr2)]
-        else:
-            if attr1 in i[0]:
-                return table[(i[0], attr2)]
+        if attr1 in i[0]:
+            return table[(i[0], attr2)]
 
 
-def NaiveBayesClassifier(Train_filename, Test_filename, Structure_filename, Number_bins):
-    # load files
-    struct = ReadStructure(Structure_filename)
-    train = ReadCsv(Train_filename)
-    test = ReadCsv(Test_filename)
-
+def Testing_model(Path,model,test):
+    struct = ReadStructure(Path+'\\Structure.txt')
+    prediction=[]
     columns = test.columns.tolist()
     rows = []
     for i in range(0, test.shape[0]):
         rows.append(test.iloc[i].tolist())
 
-    # Discretization
-    for col in struct:
-        if struct[col] == 'NUMERIC':
-            train[col] = pd.cut(train[col], Number_bins)
-            test[col] = pd.cut(test[col], Number_bins)
+
+    for row in rows:
+        lst = row[:len(row) - 1]
+        class_prob = {}
+        for class_attr in struct['class']:
+            sum = probability(model[columns[0]], class_attr)
+            for index in range(0, len(lst)):
+                sum = sum * conditional_probability(model[columns[index]], lst[index], class_attr)
+            class_prob[class_attr] = sum
+
+        # Getting the max probability from class atrrs in one row
+        prediction.append(list(filter(lambda t: t[1] == max(class_prob.values()), class_prob.items()))[0][0])
+
+    return prediction
+
+
+def NaiveBayesClassifier(Path,train):
+    # load files
+    struct = ReadStructure(Path+'\Structure.txt')
 
     # Build Model
     model = {}
@@ -106,22 +114,4 @@ def NaiveBayesClassifier(Train_filename, Test_filename, Structure_filename, Numb
                 model[key] = Build_probability_For_One_Column(train[key].tolist(), train['class'].tolist(), struct[key],
                                                               struct['class'])
 
-                # Testing Model
-    wrongs = 0
-    for row in rows:
-        result = row[len(row) - 1]
-        lst = row[:len(row) - 1]
-        class_prob = {}
-        for class_attr in struct['class']:
-            sum = probability(model[columns[0]], class_attr)
-            for index in range(0, len(lst)):
-                sum = sum * conditional_probability(model[columns[index]], lst[index], class_attr)
-            class_prob[class_attr] = sum
-
-        # Getting the max probability from class atrrs in one row
-        if list(filter(lambda t: t[1] == max(class_prob.values()), class_prob.items()))[0][0] != result:
-            wrongs += 1
-
-    # Showing info
-    print("Number of wrongs:{0}  From Total:{1}".format(wrongs, len(rows)))
-    print("Accuracy:{:.2f}%".format(float((len(rows) - wrongs) / len(rows) * 100)))
+    return model
