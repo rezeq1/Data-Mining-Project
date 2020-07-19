@@ -4,6 +4,7 @@ import Entropy
 from EnropyTree import EntropyTree as Tree
 from pyitlib import discrete_random_variable as drv
 
+
 class Discritization:
     class interval:
         def __init__(self, min, max, binNumber=None):
@@ -18,7 +19,7 @@ class Discritization:
             return f'({self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
 
         def __repr__(self):
-            return f'interval({self.min},{self.min},{self.binNumber})'
+            return f'interval({self.min},{self.max},{self.binNumber})'
 
         def in_(self, x):
             return self.min <= x <= self.max
@@ -41,8 +42,9 @@ class Discritization:
 
         newDis = []
         helpm = []
-        array=[float('-inf')]+array
+        array = [float('-inf')] + array
         array.append(float('inf'))
+
         for i in range(k):
             temp = []
             for j in range(lenB * i, lenB * i + lenB):
@@ -51,19 +53,23 @@ class Discritization:
         if len(array) > 0:
             for x in array:
                 helpm[k - 1].append(x)
+
         for x in self.data[attr].to_list():
             for i in range(len(helpm)):
                 if x in helpm[i]:
                     # newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
-                    newDis.append(self.interval(min(helpm[i]), max(helpm[i])))
+
+                    # newDis.append(self.interval(min(helpm[i]), max(helpm[i])))
+
+                    newDis.append(pd.Interval(left=min(helpm[i]), right=max(helpm[i])))
 
                     break
 
         return newDis
 
-    def EqualWidthDiscretization( self,attr):
-        array=self.data[attr].to_list()
-        k=self.numberOfbins
+    def EqualWidthDiscretization(self, attr):
+        array = self.data[attr].to_list()
+        k = self.numberOfbins
         maxa, mina = max(array), min(array)
         temp = None
         if type(k) == int:
@@ -74,25 +80,28 @@ class Discritization:
             temp = k
             k = len(k)
 
-        print(width)
         newW = 0
         newDis = []
         for i in range(k):
             if newW == 0:
+
                 for x in array:
-                    if x < width:
-                        newDis.append(self.interval(float('-inf'),width + mina,None if not temp else temp[i]))
-                newW += width + mina
-            elif i < k - 1:
+                    if x <= width:
+                        newDis.append(pd.Interval(left=float('-inf'), right=width + mina))
+
+            elif 0 <i < k - 1:
+
                 for x in array:
-                    if newW <= x < newW + width:
-                        newDis.append(self.interval(newW,newW + width,None if not temp else temp[i]))
-                newW += width
+                    if newW < x <= newW + width:
+                        newDis.append(pd.Interval(left=newW, right=newW + width))
+
+
             else:
+
                 for x in array:
-                    if newW <= x:
-                        newDis.append(self.interval(newW,float('inf'),None if not temp else temp[i]))
-                newW += width
+                    if x > newW:
+                        newDis.append(pd.Interval(left=newW, right=float('inf')))
+            newW += width
 
         return newDis
 
@@ -108,7 +117,7 @@ class Discritization:
         tree = EntropyBased(data, attr, Class, k)
         rootEnt = tree.entropy
         bins = tree.getLevel_h()
-        allSplits=tree.getNodes()
+        allSplits = tree.getNodes()
         finalBins = []
 
         bin = 0
@@ -142,30 +151,29 @@ class Discritization:
         for i in bins:
             allSplits.remove(i)
 
-        splits=[x.split for x in allSplits]
+        splits = [x.split for x in allSplits]
         splits.sort()
-        dis=[(float('-inf'),splits[0])]
+        dis = [(float('-inf'), splits[0])]
         for i in range(len(splits)):
-            if i == len(splits)-1:
+            if i == len(splits) - 1:
                 dis.append((splits[i], float('inf')))
                 print(splits[i])
             else:
-                dis.append((splits[i],splits[i+1]))
+                dis.append((splits[i], splits[i + 1]))
 
         dataD = data[attr].to_list()
         lastBins = []
         for i in range(len(dataD)):
             for x in dis:
                 if x[0] < dataD[i] <= x[1]:
-                    dataD[i] = self.interval(x[0], x[1], self.numberOfbins[dis.index(x)] if type(
-                        self.numberOfbins) is list else None)
+                    dataD[i] = pd.Interval(left=x[0], right=x[1])
                     break
 
         return dataD
 
     def built_Enropy_Discretization(self, attr, Class):
 
-        data = pd.DataFrame({attr:self.data[attr].to_list(),Class:convertStringToNum(self.data[Class].to_list())})
+        data = pd.DataFrame({attr: self.data[attr].to_list(), Class: convertStringToNum(self.data[Class].to_list())})
         k = len(self.numberOfbins) if type(self.numberOfbins) is list else self.numberOfbins
         tree = built_EntropyBased(data, attr, Class, k)
         rootEnt = tree.entropy
@@ -219,12 +227,10 @@ class Discritization:
         for i in range(len(dataD)):
             for x in dis:
                 if x[0] <= dataD[i] <= x[1]:
-                    dataD[i] = self.interval(x[0], x[1], self.numberOfbins[dis.index(x)] if type(
-                        self.numberOfbins) is list else None)
+                    dataD[i] = pd.Interval(left=x[0], right=x[1])
                     break
 
         return dataD
-
 
 
 def EntropyBased(data, attr, Class, k):
@@ -254,6 +260,7 @@ def EntropyBased(data, attr, Class, k):
         i.setEntropy(Entropy.entropy(i.getRoot()[Class].to_list()))
 
     return EntTree
+
 
 def built_EntropyBased(data, attr, Class, k):
     data = data.sort_values(by=attr)
@@ -325,6 +332,7 @@ def bestSplitPoint(data, attr, Class, gainD=None):
 
     return (bestS, entropyD)
 
+
 def built_bestSplitPoint(data, attr, Class, gainD=None):
     '''
     :param data:sorted data frame by the attr
@@ -356,22 +364,15 @@ def built_bestSplitPoint(data, attr, Class, gainD=None):
             gainD = gain
 
     return (bestS, entropyD)
+
+
 def convertStringToNum(list1):
-    sett=list(set(list1))
-    dict1={}
+    sett = list(set(list1))
+    dict1 = {}
     for i in sett:
-        dict1[i]=sett.index(i)
+        dict1[i] = sett.index(i)
     for i in range(len(list1)):
-        list1[i]=dict1[list1[i]]
+        list1[i] = dict1[list1[i]]
     return list1
 
-
-
-data = {"attr": [4, 8, 5, 12, 15, 1, 2, 3, 4, 5], 'class': ['N', 'N', 'Y', 'Y', 'Y'] * 2}
-df = pd.DataFrame(data=data)
-
-x = Discritization(df, 4)
-#x=x.built_Enropy_Discretization('attr','class')
-x=x.built_Enropy_Discretization('attr','class')
-[print(i) for i in x]
 

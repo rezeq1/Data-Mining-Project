@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import KMeans
-
+from Discretization import Discritization
 
 class PreProcessing():
 
@@ -36,9 +36,19 @@ class PreProcessing():
 
     def Discretization(self,df,Structure,Discretization_type,NumOfBins):
         if Discretization_type !='Without Discretization':
+            discrize=Discritization(df,NumOfBins)
+            Disc={'Equal frequency':discrize.EqualFrequencyDiscretization,
+                  'Equal width':discrize.EqualWidthDiscretization,
+                  'Based entropy':discrize.Enropy_Discretization}
             for key in  Structure:
                 if Structure[key] == 'NUMERIC':
-                    df[key] = pd.qcut(df[key], NumOfBins, duplicates='drop')
+                    #df[key] = pd.qcut(df[key], NumOfBins, duplicates='drop')
+                    if Discretization_type =='Based entropy':
+                        df[key]=Disc['Based entropy'](key,'class')
+                    else:
+                        df[key] = Disc[Discretization_type](key)
+
+
 
     def read_structure(self,FileName):
         struct = pd.read_csv(FileName, sep=' ', names=['type', 'feature', 'data'])
@@ -58,7 +68,7 @@ class PreProcessing():
         self.Discretization(df,Strcture,Discretization_type,NumOfBins)
 
     def Save_Data(self,df,Path,FileName):
-        df.to_csv(Path+'\\'+FileName+'_clean.csv')
+        df.to_csv(Path+'/'+FileName+'_clean.csv')
 
 
 class Processing():
@@ -71,11 +81,11 @@ class Processing():
             return ID3.ID3(Path,train)
 
     def Save_Model(self,Path,model):
-        filename = Path+'\model.sav'
+        filename = Path+'/model.sav'
         pickle.dump(model, open(filename, 'wb'))
 
     def Load_Model(self,Path):
-        filename =Path+'\model.sav'
+        filename =Path+'/model.sav'
         return pickle.load(open(filename, 'rb'))
 
     def Running_Algorithm(self,Path,Algorithm,train,test):
@@ -114,9 +124,9 @@ class BuildAlgorithm():
     def Convert_Strings_To_Numbers(self,Path):
         pre = PreProcessing()
         try:
-            test = pd.read_csv(Path+'\\test.csv')
-            train = pd.read_csv(Path+'\\train.csv')
-            struct = pre.read_structure(Path+'\\Structure.txt')
+            test = pd.read_csv(Path+'/test.csv')
+            train = pd.read_csv(Path+'/train.csv')
+            struct = pre.read_structure(Path+'/Structure.txt')
         except Exception:
             raise Exception('Files dose not exist')
 
