@@ -2,6 +2,7 @@ import os
 from  tkinter import *
 from tkinter.ttk import Combobox
 from Processing import *
+import pandas as pd
 
 window=Tk()
 window.title('Data Mining Project')
