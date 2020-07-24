@@ -6,29 +6,23 @@ from pyitlib import discrete_random_variable as drv
 
 
 class Discritization:
-    class interval:
-        def __init__(self, min, max, binNumber=None):
-            self.min = min
-            self.max = max
-            self.binNumber = binNumber
-
-        def __iter__(self, X):
-            return self
-
-        def __str__(self):
-            return f'({self.min},{self.max}]' if self.binNumber is None else f'{self.binNumber}'
-
-        def __repr__(self):
-            return f'interval({self.min},{self.max},{self.binNumber})'
-
-        def in_(self, x):
-            return self.min <= x <= self.max
-
+    '''
+    equal width and equal frequency and entropy based discrezitation
+    '''
     def __init__(self, data, numOfbis):
+        '''
+        :param data :pandas data frame to discritize
+        :param numOfbis: requisted number of bins
+        '''
         self.data = data
         self.numberOfbins = numOfbis
 
     def EqualFrequencyDiscretization(self, attr):
+        '''
+
+        :param attr:the attribute to discritize
+        :return:attribute's list after discritize with equal frequency discretization
+        '''
         array = list(self.data[attr].to_list())
         array.sort()
         helpList = None
@@ -68,6 +62,11 @@ class Discritization:
         return newDis
 
     def EqualWidthDiscretization(self, attr):
+        '''
+
+            :param attr:the attribute to discritize
+            :return:attribute's list after discritize with equal width discretization
+        '''
         array = self.data[attr].to_list()
         k = self.numberOfbins
         maxa, mina = max(array), min(array)
@@ -105,13 +104,14 @@ class Discritization:
 
         return newDis
 
-    def pandas_cut(self, attr):
-        return pd.cut(self.data[attr].to_list(), self.numberOfbins)
-
-    def pandas_qcut(self, attr):
-        return pd.qcut(self.data[attr].to_list(), self.numberOfbins)
 
     def Enropy_Discretization(self, attr, Class):
+        '''
+
+               :param attr:the attribute to discritize
+               :param Class:class attribute in the data frame
+               :return:attribute's list after discritize with entroby based  discretization
+               '''
         data = self.data
         k = len(self.numberOfbins) if type(self.numberOfbins) is list else self.numberOfbins
         tree = EntropyBased(data, attr, Class, k)
@@ -173,6 +173,15 @@ class Discritization:
 
     def built_Enropy_Discretization(self, attr, Class):
 
+        '''
+
+        :param attr:the attribute to discritize
+        :param Class:class attribute in the data frame
+        :return:attribute's list after discritize with entroby based discretization
+
+        using built entroby method from pyitlib library
+        '''
+
         data = pd.DataFrame({attr: self.data[attr].to_list(), Class: convertStringToNum(self.data[Class].to_list())})
         k = len(self.numberOfbins) if type(self.numberOfbins) is list else self.numberOfbins
         tree = built_EntropyBased(data, attr, Class, k)
@@ -218,7 +227,6 @@ class Discritization:
         for i in range(len(splits)):
             if i == len(splits) - 1:
                 dis.append((splits[i], float('inf')))
-                print(splits[i])
             else:
                 dis.append((splits[i], splits[i + 1]))
 
@@ -234,6 +242,13 @@ class Discritization:
 
 
 def EntropyBased(data, attr, Class, k):
+    '''
+    :param data: pandas data frame
+    :param attr:the attribute to discritize
+    :param Class:class attribute in the data frame
+    :param k:number of buns
+    :return: Entropy tree with 2^([log(k)]+1) leaves
+    '''
     data = data.sort_values(by=attr)
     EntTree = Tree(data)
     split = [bestSplitPoint(data, attr, Class)]
@@ -263,6 +278,14 @@ def EntropyBased(data, attr, Class, k):
 
 
 def built_EntropyBased(data, attr, Class, k):
+    '''
+        :param data: pandas data frame
+        :param attr:the attribute to discritize
+        :param Class:class attribute in the data frame
+        :param k:number of buns
+        :return: Entropy tree with 2^([log(k)]+1) leaves
+        using built entroby method from pyitlib library
+        '''
     data = data.sort_values(by=attr)
     EntTree = Tree(data)
     split = [bestSplitPoint(data, attr, Class)]
@@ -367,6 +390,11 @@ def built_bestSplitPoint(data, attr, Class, gainD=None):
 
 
 def convertStringToNum(list1):
+    '''
+
+    :param list1: list of strings
+    :return: list on numbers
+    '''
     sett = list(set(list1))
     dict1 = {}
     for i in sett:
@@ -374,5 +402,3 @@ def convertStringToNum(list1):
     for i in range(len(list1)):
         list1[i] = dict1[list1[i]]
     return list1
-
-
