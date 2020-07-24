@@ -2,7 +2,8 @@ import os
 from  tkinter import *
 from tkinter.ttk import Combobox
 from Processing import *
-import pandas as pd
+
+# edit and build the main screen
 
 window=Tk()
 window.title('Data Mining Project')
@@ -22,6 +23,11 @@ NumOfNeighbors = StringVar()
 Algorithm = StringVar()
 
 def InputsForm():
+    '''
+    function that build a main frame that contain all the entrys (inputs) to give to the user the ability to choose
+    what algorithm he want and to fill the other entrys.
+    :return:nothing
+    '''
     global Inputs_Frame, result_label,NumOFBins_entry,NumOfNeighbors_entry,NumOfNeighbors_label
     Inputs_Frame = Frame(window)
     Inputs_Frame.pack(side=TOP, pady=40)
@@ -67,6 +73,10 @@ def InputsForm():
     result_button.grid(row=9, columnspan=2, pady=20)
 
 def Discretization_command(event):
+    '''
+    command function to the discretization combo box
+    :return:nothing
+    '''
     if Discretization.get()!='Without Discretization':
         NumOFBins_entry.configure(state="normal")
     else:
@@ -74,6 +84,10 @@ def Discretization_command(event):
         NumOFBins_entry.configure(state="disabled")
 
 def Algorithm_command(event):
+    '''
+    command function to the algorithm combo box
+    :return:nothing
+    '''
     if Algorithm.get() == 'KNN':
         NumOfNeighbors_entry.configure(state="normal")
         NumOfNeighbors_label['text']='Number of neighbors :'
@@ -87,6 +101,10 @@ def Algorithm_command(event):
 
 
 def InputsForm_To_ResultForm():
+    '''
+    function that check if the inputs of the user are propers
+    :return:nothing
+    '''
     if Algorithm.get() in ['KNN','K-MEANS']:
         if NumOfNeighbors.get() == '':
             NumOfNeighbors.set('2')
@@ -127,12 +145,20 @@ def InputsForm_To_ResultForm():
 
 
 def ResultForm_To_InputsForm():
+    '''
+    function that convert the frame from the main frame to the result frame
+    :return:nothing
+    '''
     Path.set("")
     NumOFBins.set("")
     Result_Frame.destroy()
     InputsForm()
 
 def ResultForm():
+    '''
+    function that build a result frame that contain all the results for the inputs that user gives .
+    :return:nothing
+    '''
     global Result_Frame,label
     Result_Frame = Frame(window)
     Result_Frame.pack()
@@ -205,6 +231,10 @@ def ResultForm():
     Return_button.grid(row=17,column=1, columnspan=2, pady=20)
 
 def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
+    '''
+    function that runs the algorithm that user choose and return the results of the user inputs and clean the files before that.
+    :return:nothing
+    '''
     pre = PreProcessing()
 
     test = pd.read_csv(Path+'\\test.csv')
@@ -222,5 +252,6 @@ def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
     train, test = runner.Convert_Strings_To_Numbers(Path)
     return runner.Run(Algorithm, train, test, Path,NumOfNeg)
 
+#running the main frame
 InputsForm()
 window.mainloop()
