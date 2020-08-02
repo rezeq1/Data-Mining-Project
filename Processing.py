@@ -208,7 +208,7 @@ class BuildAlgorithm(PreProcessing):
     '''
     this class for running the algorithms (librarys implementaion) and for saving the model and building the model.
     '''
-    def Convert_Strings_To_Numbers(self,Path):
+    def Convert_Strings_To_Numbers(self,Path,Discretization_type, NumOfBins):
         '''
         convert all the strings in the data frame to numbers by a built function and clean the files.
         :param Path: the path of the files
@@ -216,19 +216,21 @@ class BuildAlgorithm(PreProcessing):
         '''
         pre = PreProcessing()
         try:
-            test = pd.read_csv(Path+'/test.csv')
-            train = pd.read_csv(Path+'/train.csv')
-            struct = pre.read_structure(Path+'/Structure.txt')
+
+            test = pd.read_csv(Path+'\\test.csv')
+            train = pd.read_csv(Path+'\\train.csv')
+            struct = pre.read_structure(Path+'\\Structure.txt')
         except Exception:
             raise Exception('Files dose not exist')
 
         if pre.Is_Empty(train) or pre.Is_Empty(test):
             raise Exception('They are at least one empty file')
 
-        pre.Delete_Nan_Class_Row(train)
-        pre.Fill_Nan_Values(train, struct)
-        pre.Delete_Nan_Class_Row(test)
-        pre.Fill_Nan_Values(test, struct)
+        pre.Clean_Data(train, struct, Discretization_type, NumOfBins)
+        pre.Clean_Data(test, struct, Discretization_type, NumOfBins)
+
+        pre.Save_Data(train, Path, 'train')
+        pre.Save_Data(test, Path, 'test')
 
         le = preprocessing.LabelEncoder()
         for col in struct:
@@ -236,6 +238,12 @@ class BuildAlgorithm(PreProcessing):
                 # Converting string labels into numbers.
                 train[col]=le.fit_transform(train[col].tolist())
                 test[col]=le.fit_transform(test[col].tolist())
+            else:
+                train[col]=list(map(str,train[col].tolist()))
+                test[col]=list(map(str,test[col].tolist()))
+                train[col]=le.fit_transform(train[col].tolist())
+                test[col]=le.fit_transform(test[col].tolist())
+
 
         return train,test
 

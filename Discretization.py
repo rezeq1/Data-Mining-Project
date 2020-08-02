@@ -1,5 +1,7 @@
 import pandas as pd
 from math import log2
+
+
 import Entropy
 from EnropyTree import EntropyTree as Tree
 from pyitlib import discrete_random_variable as drv
@@ -173,7 +175,6 @@ class Discritization:
         for i in range(len(splits)):
             if i == len(splits) - 1:
                 dis.append((splits[i], float('inf')))
-                print(splits[i])
             else:
                 dis.append((splits[i], splits[i + 1]))
 

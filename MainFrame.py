@@ -247,30 +247,31 @@ def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
     function that runs the algorithm that user choose and return the results of the user inputs and clean the files before that.
     :return:nothing
     '''
-    pre = PreProcessing()
-
-    test = pd.read_csv(Path+'\\test.csv')
-    train = pd.read_csv(Path+'\\train.csv')
-    struct = pre.read_structure(Path+'\\Structure.txt')
-
-    pre.Clean_Data(train, struct,Discretization_type,NumOfBins)
-    pre.Delete_Nan_Class_Row(test)
-    pre.Fill_Nan_Values(test, struct)
-
-    pre.Save_Data(train,Path, 'train')
-    pre.Save_Data(test,Path, 'test')
-
     if Algorithm not in ['naive bayes classifier (our)','ID3 (our)']:
         runner = BuildAlgorithm()
-        train, test = runner.Convert_Strings_To_Numbers(Path)
+        train, test = runner.Convert_Strings_To_Numbers(Path,Discretization_type, NumOfBins)
         return runner.Run(Algorithm, train, test, Path,NumOfNeg)
     else:
+        pre = PreProcessing()
+
+        test = pd.read_csv(Path + '\\test.csv')
+        train = pd.read_csv(Path + '\\train.csv')
+        struct = pre.read_structure(Path + '\\Structure.txt')
+
+        pre.Clean_Data(train, struct, Discretization_type, NumOfBins)
+        pre.Delete_Nan_Class_Row(test)
+        pre.Fill_Nan_Values(test, struct)
+
+        pre.Save_Data(train, Path, 'train')
+        pre.Save_Data(test, Path, 'test')
+
         process=Processing()
         model=process.Build_Model(Path,Algorithm,train)
         process.Save_Model(Path,model)
         train = pd.read_csv(Path+'\\train.csv')
         pre.Delete_Nan_Class_Row(train)
         pre.Fill_Nan_Values(train,struct)
+
         return process.Running_Algorithm(Path,Algorithm,train,test)
 
 
