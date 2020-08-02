@@ -20,7 +20,7 @@ class PreProcessing():
     def  Is_Empty(self,df):
         '''
         check if data frame is empty if yes return True else False
-        :param df: a data frane
+        :param df: a data frame
         :return: nothing
         '''
         return df.empty
@@ -28,7 +28,7 @@ class PreProcessing():
     def Delete_Nan_Class_Row(self,df):
         '''
         delete the rows that contain class empty value.
-        :param df: a data frane
+        :param df: a data frame
         :return: nothing
         '''
         df.dropna(subset=['class'], inplace=True)
@@ -84,6 +84,8 @@ class PreProcessing():
 
 
 
+
+
     def read_structure(self,FileName):
         '''
         the function return a dict that conatin the struct of the data frame by reading the structure file .
@@ -125,7 +127,7 @@ class PreProcessing():
         df.to_csv(Path+'/'+FileName+'_clean.csv')
 
 
-class Processing():
+class Processing(PreProcessing):
     '''
     this class for running the algorithm (our implementaion) and for saving the model and building the model.
     '''
@@ -137,10 +139,10 @@ class Processing():
         :param train: data frame that we want to build the model for it.
         :return: a model
         '''
-        if Algorithm == 'naive bayes classifier':
+        if Algorithm == 'naive bayes classifier (our)':
             return NaiveBayesClassifier.NaiveBayesClassifier(Path,train)
 
-        if Algorithm == 'ID3':
+        if Algorithm == 'ID3 (our)':
             return ID3.ID3(Path,train)
 
     def Save_Model(self,Path,model):
@@ -171,13 +173,14 @@ class Processing():
         :param test: the test data frame
         :return: a dict that contain the results for the train and the test files.
         '''
-        if Algorithm == 'naive bayes classifier':
+        if Algorithm == 'naive bayes classifier (our)':
             prediction_train = NaiveBayesClassifier.Testing_model(Path,self.Load_Model(Path),train)
             prediction_test  = NaiveBayesClassifier.Testing_model(Path,self.Load_Model(Path),test)
 
-        if Algorithm == 'ID3':
+        if Algorithm == 'ID3 (our)':
             prediction_train = ID3.Testing_model(Path,self.Load_Model(Path),train)
             prediction_test  = ID3.Testing_model(Path,self.Load_Model(Path),test)
+
         train_targets=train['class'].tolist()
         test_targets=test['class'].tolist()
 
@@ -201,7 +204,7 @@ class Processing():
 
 
 
-class BuildAlgorithm():
+class BuildAlgorithm(PreProcessing):
     '''
     this class for running the algorithms (librarys implementaion) and for saving the model and building the model.
     '''
@@ -305,7 +308,7 @@ class BuildAlgorithm():
                 x=scaler.fit_transform(x)
 
                 #building the model
-                kmeans = KMeans(n_clusters=n_neighbors, max_iter=600, algorithm='auto')
+                kmeans = KMeans(n_clusters=n_neighbors)
                 kmeans.fit(x)
 
                 # Saving model
@@ -330,11 +333,4 @@ class BuildAlgorithm():
 
             return info
 
-'''
-model=process.Build_Model(Path,'naive bayes classifier',train)
-process.Save_Model(Path,model)
-train = pd.read_csv('train.csv')
-pre.Delete_Nan_Class_Row(train)
-pre.Fill_Nan_Values(train,struct)
-process.Running_Algorithm(Path,'naive bayes classifier',train,test)
-'''
+

@@ -23,7 +23,7 @@ def InfoGain(data, attr):
     :param attr:attribute of the wanted data
     :return:information gain of the attr according to thw class
     '''
-    total_entropy = entropy(data["class"])
+    total_entropy = entropy(data["class"].tolist())
     values, counts = np.unique(data[attr], return_counts=True)
     weightes = []
     for i in range(0, len(values)):

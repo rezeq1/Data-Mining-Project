@@ -3,11 +3,12 @@ from  tkinter import *
 from tkinter.ttk import Combobox
 from Processing import *
 
+
 # edit and build the main screen
 
 window=Tk()
 window.title('Data Mining Project')
-width =1200
+width =1250
 height = 750
 screen_width = window.winfo_screenwidth()
 screen_height = window.winfo_screenheight()
@@ -55,7 +56,7 @@ def InputsForm():
 
     Algorithm_label = Label(Inputs_Frame, text="Choices of Algorithms :", font=('arial', 18), bd=18)
     Algorithm_label.grid(row=6)
-    Algorithm_values=['naive bayes classifier','ID3','KNN','K-MEANS']
+    Algorithm_values=['naive bayes classifier','naive bayes classifier (our)','ID3','ID3 (our)','KNN','K-MEANS']
     Algorithm_Combo = Combobox(Inputs_Frame,values=Algorithm_values, textvariable=Algorithm,font=('arial', 15), width=20,state="readonly")
     Algorithm_Combo.grid(row=6, column=1)
     Algorithm_Combo.current(0)
@@ -105,6 +106,10 @@ def InputsForm_To_ResultForm():
     function that check if the inputs of the user are propers
     :return:nothing
     '''
+    if Discretization.get() == 'Without Discretization':
+        result_label.configure(text="This algorithm can't be run without discretization")
+        return ''
+
     if Algorithm.get() in ['KNN','K-MEANS']:
         if NumOfNeighbors.get() == '':
             NumOfNeighbors.set('2')
@@ -169,42 +174,49 @@ def ResultForm():
         bins=''
 
     try:
+        text_=Algorithm.get()+' , '+Discretization.get()
+
         results=Run_Algoritm(Path.get(),Algorithm.get(),Discretization.get(),bins,2 if NumOfNeighbors.get()=='' else int(NumOfNeighbors.get()))
+        filename=Algorithm.get()+','+Discretization.get()+'_results'
+        pickle.dump(results, open(Path.get()+'\\'+filename, 'wb'))
         train_matrix=results['train']['Confusion Matrix']
         test_matrix=results['test']['Confusion Matrix']
 
+        label0 = Label(Result_Frame, text=text_,fg='blue',font=('Arial',15, 'bold'))
+        label0.grid(row=0)
+
         label1 = Label(Result_Frame, text="Confusion Matrix (Train)",font=('Arial',18, 'bold'))
-        label1.grid(row=0)
+        label1.grid(row=1)
         label2 = Label(Result_Frame, text=" ")
-        label2.grid(row=1)
+        label2.grid(row=2)
 
         lst = [('TP = '+str(train_matrix[0][0]),'FP = '+str(train_matrix[0][1])),('FN = '+str(train_matrix[1][0]),'TN = '+str(train_matrix[1][1]))]
         for i in range(2):
             for j in range(2):
                 e = Entry(Result_Frame, width=20, fg='blue',font=('Arial', 16, 'bold'))
-                e.grid(row=i+2, column=j)
+                e.grid(row=i+3, column=j)
                 e.insert(END, lst[i][j])
 
         label3 = Label(Result_Frame, text="",font=('Arial',18, 'bold'))
-        label3.grid(row=4)
+        label3.grid(row=5)
         label4 = Label(Result_Frame, text="Confusion Matrix (Test)",font=('Arial',18, 'bold'))
-        label4.grid(row=5)
+        label4.grid(row=6)
         label5 = Label(Result_Frame, text=" ")
-        label5.grid(row=6)
+        label5.grid(row=7)
 
         lst = [('TP = '+str(test_matrix[0][0]),'FP = '+str(test_matrix[0][1])),('FN = '+str(test_matrix[1][0]),'TN = '+str(test_matrix[1][1]))]
         for i in range(2):
             for j in range(2):
                 e2 = Entry(Result_Frame, width=20, fg='blue',font=('Arial', 16, 'bold'))
-                e2.grid(row=i+7, column=j)
+                e2.grid(row=i+8, column=j)
                 e2.insert(END, lst[i][j])
 
         label6 = Label(Result_Frame, text=" ")
-        label6.grid(row=9)
+        label6.grid(row=10)
         label7 = Label(Result_Frame, text="Results",font=('Arial',18, 'bold'))
-        label7.grid(row=10)
+        label7.grid(row=11)
         label8 = Label(Result_Frame, text=" ")
-        label8.grid(row=11)
+        label8.grid(row=12)
 
         lst = [(' ','Accuracy','Precision','Recall','F-measure')]
         for i in ['train','test']:
@@ -217,18 +229,18 @@ def ResultForm():
         for i in range(3):
             for j in range(5):
                 e2 = Entry(Result_Frame, width=20, fg='blue',font=('Arial', 16, 'bold'))
-                e2.grid(row=i+12, column=j)
+                e2.grid(row=i+13, column=j)
                 e2.insert(END, lst[i][j])
 
         label9 = Label(Result_Frame, text=" ")
-        label9.grid(row=16)
+        label9.grid(row=17)
 
     except Exception as e:
         label = Label(Result_Frame, text=e.args[1], fg='Red',font=('Arial', 20, 'bold'))
-        label.grid(row=16)
+        label.grid(row=17)
 
     Return_button = Button(Result_Frame, text="Return for the First Page", font=('arial', 18),command=ResultForm_To_InputsForm, width=35,fg='red')
-    Return_button.grid(row=17,column=1, columnspan=2, pady=20)
+    Return_button.grid(row=18,column=1, columnspan=2, pady=20)
 
 def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
     '''
@@ -248,9 +260,19 @@ def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
     pre.Save_Data(train,Path, 'train')
     pre.Save_Data(test,Path, 'test')
 
-    runner = BuildAlgorithm()
-    train, test = runner.Convert_Strings_To_Numbers(Path)
-    return runner.Run(Algorithm, train, test, Path,NumOfNeg)
+    if Algorithm not in ['naive bayes classifier (our)','ID3 (our)']:
+        runner = BuildAlgorithm()
+        train, test = runner.Convert_Strings_To_Numbers(Path)
+        return runner.Run(Algorithm, train, test, Path,NumOfNeg)
+    else:
+        process=Processing()
+        model=process.Build_Model(Path,Algorithm,train)
+        process.Save_Model(Path,model)
+        train = pd.read_csv(Path+'\\train.csv')
+        pre.Delete_Nan_Class_Row(train)
+        pre.Fill_Nan_Values(train,struct)
+        return process.Running_Algorithm(Path,Algorithm,train,test)
+
 
 #running the main frame
 InputsForm()

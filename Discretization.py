@@ -25,13 +25,11 @@ class Discritization:
         '''
         array = list(self.data[attr].to_list())
         array.sort()
-        helpList = None
         k = self.numberOfbins
         if type(k) == int:
             lenB = len(self.data[attr].to_list()) // k
         else:
             lenB = len(self.data[attr].to_list()) // len(k)
-            helpList = k
             k = len(k)
 
         newDis = []
@@ -51,13 +49,13 @@ class Discritization:
         for x in self.data[attr].to_list():
             for i in range(len(helpm)):
                 if x in helpm[i]:
-                    # newDis.append(f'({min(helpm[i])},{max(helpm[i])})' if not helpList else helpList[i])
 
-                    # newDis.append(self.interval(min(helpm[i]), max(helpm[i])))
-
-                    newDis.append(pd.Interval(left=min(helpm[i]), right=max(helpm[i])))
-
+                    if i == 0:
+                        newDis.append(pd.Interval(left=min(helpm[i]), right=max(helpm[i])))
+                    else:
+                        newDis.append(pd.Interval(left=max(helpm[i-1]), right=max(helpm[i])))
                     break
+
 
         return newDis
 
@@ -70,39 +68,57 @@ class Discritization:
         array = self.data[attr].to_list()
         k = self.numberOfbins
         maxa, mina = max(array), min(array)
-        temp = None
+
         if type(k) == int:
             width = round((maxa - mina) / k, 3)
 
         else:
             width = (maxa - mina) / len(k)
-            temp = k
             k = len(k)
 
         newW = 0
         newDis = []
+
+        leftVal=0
         for i in range(k):
             if newW == 0:
 
                 for x in array:
                     if x <= width:
                         newDis.append(pd.Interval(left=float('-inf'), right=width + mina))
+                        leftVal=width + mina
+
 
             elif 0 <i < k - 1:
 
                 for x in array:
+
                     if newW < x <= newW + width:
-                        newDis.append(pd.Interval(left=newW, right=newW + width))
+
+                        newDis.append(pd.Interval(left=leftVal, right=newW + width))
+                        leftVal = newW + width
+
+
+
 
 
             else:
 
                 for x in array:
                     if x > newW:
-                        newDis.append(pd.Interval(left=newW, right=float('inf')))
-            newW += width
+                        newDis.append(pd.Interval(left=leftVal, right=float('inf')))
 
-        return newDis
+            newW += width
+        finalDis=[]
+
+        for i in array:
+            for x in newDis:
+                if i in x:
+                    finalDis.append(x)
+                    break
+
+
+        return finalDis
 
 
     def Enropy_Discretization(self, attr, Class):
@@ -162,7 +178,6 @@ class Discritization:
                 dis.append((splits[i], splits[i + 1]))
 
         dataD = data[attr].to_list()
-        lastBins = []
         for i in range(len(dataD)):
             for x in dis:
                 if x[0] < dataD[i] <= x[1]:
@@ -181,8 +196,7 @@ class Discritization:
 
         using built entroby method from pyitlib library
         '''
-
-        data = pd.DataFrame({attr: self.data[attr].to_list(), Class: convertStringToNum(self.data[Class].to_list())})
+        data=self.data
         k = len(self.numberOfbins) if type(self.numberOfbins) is list else self.numberOfbins
         tree = built_EntropyBased(data, attr, Class, k)
         rootEnt = tree.entropy
@@ -231,7 +245,7 @@ class Discritization:
                 dis.append((splits[i], splits[i + 1]))
 
         dataD = data[attr].to_list()
-        lastBins = []
+
         for i in range(len(dataD)):
             for x in dis:
                 if x[0] <= dataD[i] <= x[1]:
@@ -251,17 +265,13 @@ def EntropyBased(data, attr, Class, k):
     '''
     data = data.sort_values(by=attr)
     EntTree = Tree(data)
-    split = [bestSplitPoint(data, attr, Class)]
-    # bins = [data.loc[data[attr] <= split[0][0]], data.loc[data[attr] > split[0][0]]]
-    finalSplit = []
     depth = log2(k)
 
     if (int(depth) - depth) != 0:
         depth = int(depth) + 1
 
     for i in range(int(depth)):
-        helpBin = []
-        tree = EntTree
+
         bins = EntTree.getLeafs()
         for b in bins:
             data = b.getRoot()
@@ -288,17 +298,12 @@ def built_EntropyBased(data, attr, Class, k):
         '''
     data = data.sort_values(by=attr)
     EntTree = Tree(data)
-    split = [bestSplitPoint(data, attr, Class)]
-    # bins = [data.loc[data[attr] <= split[0][0]], data.loc[data[attr] > split[0][0]]]
-    finalSplit = []
     depth = log2(k)
 
     if (int(depth) - depth) != 0:
         depth = int(depth) + 1
 
     for i in range(int(depth)):
-        helpBin = []
-        tree = EntTree
         bins = EntTree.getLeafs()
         for b in bins:
             data = b.getRoot()
@@ -388,17 +393,3 @@ def built_bestSplitPoint(data, attr, Class, gainD=None):
 
     return (bestS, entropyD)
 
-
-def convertStringToNum(list1):
-    '''
-
-    :param list1: list of strings
-    :return: list on numbers
-    '''
-    sett = list(set(list1))
-    dict1 = {}
-    for i in sett:
-        dict1[i] = sett.index(i)
-    for i in range(len(list1)):
-        list1[i] = dict1[list1[i]]
-    return list1
