@@ -1,3 +1,9 @@
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
+
 class EntropyTree:
     '''
     tree contain data frame and

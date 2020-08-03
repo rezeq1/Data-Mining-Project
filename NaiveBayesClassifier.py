@@ -2,6 +2,11 @@ from functools import reduce
 from collections import Counter
 import numpy
 import pandas as pd
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
 
 
 def ReadCsv(FileName):
@@ -109,7 +114,7 @@ def Testing_model(Path,model,test):
     :return:classifications of the rows of the given data frame
     '''
 
-    struct = ReadStructure(Path+'\\Structure.txt')
+    struct = ReadStructure(Path+'/Structure.txt')
     prediction=[]
     columns = test.columns.tolist()
     rows = []
@@ -140,7 +145,7 @@ def NaiveBayesClassifier(Path,train):
     :return: a model
     '''
     # load files
-    struct = ReadStructure(Path+'\Structure.txt')
+    struct = ReadStructure(Path+'/Structure.txt')
 
     # Build Model
     model = {}

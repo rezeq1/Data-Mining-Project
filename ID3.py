@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 from Entropy import InfoGain
 import random
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
 
 def read_structure(FileName):
     '''

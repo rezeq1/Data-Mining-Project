@@ -1,11 +1,14 @@
 import pandas as pd
 from math import log2
-
-
 import Entropy
 from EnropyTree import EntropyTree as Tree
 from pyitlib import discrete_random_variable as drv
 
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
 
 class Discritization:
     '''
@@ -175,6 +178,7 @@ class Discritization:
         for i in range(len(splits)):
             if i == len(splits) - 1:
                 dis.append((splits[i], float('inf')))
+                print(splits[i])
             else:
                 dis.append((splits[i], splits[i + 1]))
 
@@ -339,6 +343,8 @@ def bestSplitPoint(data, attr, Class, gainD=None):
     list1 = data[attr].to_list()
     if len(list1) == 1:
         return (list1[0], 0)
+    if len(list1) == 1:
+        raise Exception("can't split the data,try smaller number of bins")
     entropyD = Entropy.entropy(data[Class].to_list())
     bestS = (list1[0] + list1[1]) / 2
     firstS = data.loc[data[attr] <= bestS]

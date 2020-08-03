@@ -3,6 +3,11 @@ from  tkinter import *
 from tkinter.ttk import Combobox
 from Processing import *
 
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
 
 # edit and build the main screen
 
@@ -178,7 +183,7 @@ def ResultForm():
 
         results=Run_Algoritm(Path.get(),Algorithm.get(),Discretization.get(),bins,2 if NumOfNeighbors.get()=='' else int(NumOfNeighbors.get()))
         filename=Algorithm.get()+','+Discretization.get()+'_results'
-        pickle.dump(results, open(Path.get()+'\\'+filename, 'wb'))
+        pickle.dump(results, open(Path.get()+'/'+filename, 'wb'))
         train_matrix=results['train']['Confusion Matrix']
         test_matrix=results['test']['Confusion Matrix']
 
@@ -247,31 +252,30 @@ def Run_Algoritm(Path,Algorithm,Discretization_type,NumOfBins,NumOfNeg):
     function that runs the algorithm that user choose and return the results of the user inputs and clean the files before that.
     :return:nothing
     '''
+    pre = PreProcessing()
+
+    test = pd.read_csv(Path+'/test.csv')
+    train = pd.read_csv(Path+'/train.csv')
+    struct = pre.read_structure(Path+'/Structure.txt')
+
+    pre.Clean_Data(train, struct,Discretization_type,NumOfBins)
+    pre.Delete_Nan_Class_Row(test)
+    pre.Fill_Nan_Values(test, struct)
+
+    pre.Save_Data(train,Path, 'train')
+    pre.Save_Data(test,Path, 'test')
+
     if Algorithm not in ['naive bayes classifier (our)','ID3 (our)']:
         runner = BuildAlgorithm()
-        train, test = runner.Convert_Strings_To_Numbers(Path,Discretization_type, NumOfBins)
+        train, test = runner.Convert_Strings_To_Numbers(Path)
         return runner.Run(Algorithm, train, test, Path,NumOfNeg)
     else:
-        pre = PreProcessing()
-
-        test = pd.read_csv(Path + '\\test.csv')
-        train = pd.read_csv(Path + '\\train.csv')
-        struct = pre.read_structure(Path + '\\Structure.txt')
-
-        pre.Clean_Data(train, struct, Discretization_type, NumOfBins)
-        pre.Delete_Nan_Class_Row(test)
-        pre.Fill_Nan_Values(test, struct)
-
-        pre.Save_Data(train, Path, 'train')
-        pre.Save_Data(test, Path, 'test')
-
         process=Processing()
         model=process.Build_Model(Path,Algorithm,train)
         process.Save_Model(Path,model)
-        train = pd.read_csv(Path+'\\train.csv')
+        train = pd.read_csv(Path+'/train.csv')
         pre.Delete_Nan_Class_Row(train)
         pre.Fill_Nan_Values(train,struct)
-
         return process.Running_Algorithm(Path,Algorithm,train,test)
 
 

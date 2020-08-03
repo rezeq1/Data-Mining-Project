@@ -1,6 +1,11 @@
 from math import log
 import numpy as np
 
+'''
+Omar Hmdea 206635922
+Iz Adeeb Alkoran 207101429
+Reziq Abu Mdeagm 211606801
+'''
 
 def entropy(list):
     '''
